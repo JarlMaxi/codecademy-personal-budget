@@ -16,7 +16,10 @@ app.get("/", (req, res, next) => {
 
 // This will get all envelopes in an array as it is right now
 app.get("/envelope", (req, res, next) => {
-  res.send(envelopes);
+  const sortId = (a, b) => {
+    return a.id - b.id;
+  };
+  res.send(envelopes.sort(sortId));
 });
 
 // This will look for an envelope depending on the specific ID
@@ -25,7 +28,9 @@ app.get("/envelope/:id", (req, res, next) => {
   if (id === undefined) {
     res.status(400).send("Provide ID please");
   } else {
-    const findEnvelopeWithId = envelopes.find((envelope) => envelope.id == Number(id));
+    const findEnvelopeWithId = envelopes.find(
+      (envelope) => envelope.id == Number(id)
+    );
     if (findEnvelopeWithId) {
       const { title, budget } = findEnvelopeWithId;
       res.status(200).send({ id, title, budget });
@@ -49,7 +54,44 @@ app.post("/envelope", (req, res, next) => {
     envelopes.push(newEnvelope);
     res
       .status(201)
-      .send(`Thank you for the ${title} envelope with ${budget} USD`);
+      .send(
+        `Thank you for the ${title.toLowerCase()} envelope with ${budget} USD`
+      );
+  }
+});
+
+// Update budget inside of an envelope
+app.put("/envelope/:id", (req, res, next) => {
+  const id = req.params.id;
+  const newAmount = req.body.budget;
+
+  if (newAmount === undefined || isNaN(newAmount)) {
+    res.status(400).send("Please provide valid numbers");
+  }
+
+  let findEnvelopeWithId = envelopes.find(
+    (envelope) => envelope.id == Number(id)
+  );
+
+  if (findEnvelopeWithId === undefined) {
+    res.status(400).send("Please provide an ID");
+  } else {
+    findEnvelopeWithId.budget = newAmount;
+    res.status(201).send(findEnvelopeWithId);
+  }
+});
+
+// Delete a specific envelope
+app.delete("/envelope/:id", (req, res, next) => {
+  const id = req.params.id;
+
+  const index = envelopes.findIndex((envelope) => envelope.id === id);
+
+  if (!index === -1) {
+    res.status(400).send("Envelope not found");
+  } else {
+    envelopes.splice(index, 1);
+    res.status(204).send(`Envelope with id ${id} deleted`);
   }
 });
 
