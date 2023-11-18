@@ -1,21 +1,14 @@
 const express = require("express");
 const app = express();
 
-const totalMoney = "4000";
-let testMoney = "40";
-
 let envelopes = [];
 
 //Use express.json middleware to parse JSON requests
 app.use(express.json());
 
-//This is a simple test app.get to ensure it works as intended
-app.get("/", (req, res, next) => {
-  res.send(testMoney);
-});
-
 // This will get all envelopes in an array as it is right now
 app.get("/envelope", (req, res, next) => {
+  // Sort function to sort envelopes based on ascending ID order
   const sortId = (a, b) => {
     return a.id - b.id;
   };
@@ -25,18 +18,19 @@ app.get("/envelope", (req, res, next) => {
 // This will look for an envelope depending on the specific ID
 app.get("/envelope/:id", (req, res, next) => {
   const id = req.params.id;
+
   if (id === undefined) {
     res.status(400).send("Provide ID please");
+  }
+  const findEnvelopeWithId = envelopes.find(
+    (envelope) => envelope.id == Number(id)
+  );
+
+  if (findEnvelopeWithId) {
+    const { title, budget } = findEnvelopeWithId;
+    res.status(200).send({ id, title, budget });
   } else {
-    const findEnvelopeWithId = envelopes.find(
-      (envelope) => envelope.id == Number(id)
-    );
-    if (findEnvelopeWithId) {
-      const { title, budget } = findEnvelopeWithId;
-      res.status(200).send({ id, title, budget });
-    } else {
-      res.status(404).send("Envelope not found");
-    }
+    res.status(404).send("Envelope not found");
   }
 });
 
@@ -57,6 +51,27 @@ app.post("/envelope", (req, res, next) => {
       .send(
         `Thank you for the ${title.toLowerCase()} envelope with ${budget} USD`
       );
+  }
+});
+
+// Transfer budget from one envelope to another
+app.post("/envelope/transfer/:fromId/:toId", (req, res, next) => {
+  const fromId = req.params.fromId;
+  const toId = req.params.toId;
+  const amount = req.body.amount;
+
+  //Find the from and to envelope
+  const findFromEnvelope = envelopes.find((envelope) => envelope.id == fromId);
+  const findToEnvelope = envelopes.find((envelope) => envelope.id == toId);
+
+  if (findFromEnvelope === undefined || findToEnvelope === undefined) {
+    res.status(400).send("Please provide proper IDs");
+  } else {
+    findFromEnvelope.budget -= amount;
+    findToEnvelope.budget += amount;
+    res
+      .status(200)
+      .send(`${findFromEnvelope.title} is now ${findFromEnvelope.budget}`);
   }
 });
 
