@@ -1,5 +1,10 @@
-const express = require("express");
+import express from "express";
+import { JSONPreset } from "lowdb/node";
+
 const app = express();
+
+const defaultData = { envelopes: []}
+const db = await JSONPreset('db.json', defaultData)
 
 let envelopes = [];
 
@@ -7,12 +12,14 @@ let envelopes = [];
 app.use(express.json());
 
 // This will get all envelopes in an array as it is right now
-app.get("/envelope", (req, res, next) => {
+app.get("/envelope", async (req, res, next) => {
   // Sort function to sort envelopes based on ascending ID order
   const sortId = (a, b) => {
     return a.id - b.id;
   };
-  res.send(envelopes.sort(sortId));
+  await db.read();
+  const dbEnvelopes = db.data.envelopes.sort(sortId);
+  res.status(200).send(dbEnvelopes)
 });
 
 // This will look for an envelope depending on the specific ID
