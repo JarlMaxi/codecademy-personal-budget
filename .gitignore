@@ -1,1 +1,4 @@
+# Ignore node modules
 node_modules/
+# Ignore db.json so a personal file can be created and used
+db.json
